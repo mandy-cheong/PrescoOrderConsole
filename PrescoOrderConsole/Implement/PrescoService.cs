@@ -18,12 +18,12 @@ using System.Web;
 public class PrescoService
 {
     //測試
-    public string _url = "https://test-cbec.sp88.tw";
+    // public string _url = "https://test-cbec.sp88.tw";
     //正式
-     //public string _url = "https://cbec.sp88.tw";
+    // public string _url = "https://cbec.sp88.tw";
     private readonly APIHelper _apiHelper;
 
-
+    public string _url = System.Configuration.ConfigurationManager.AppSettings["prescourl"];
     public PrescoService()
     {
         //
@@ -140,7 +140,7 @@ public class PrescoService
     private SqlCommand UpdateShipmenntCmd(PrescoOrderLog log)
     {
         var cmd = new SqlCommand();
-        cmd.CommandText = "Update Shipment set ST69 = @PrescoShipID, ST12=1 where ST02 = @GMShipID";
+        cmd.CommandText = "Update Shipment set ST69 = @PrescoShipID, ST12=0 where ST02 = @GMShipID";
         cmd.Parameters.Add( SafeSQL.CreateInputParam("@PrescoShipID", SqlDbType.NVarChar, log.PrescoShipID));
         cmd.Parameters.Add(SafeSQL.CreateInputParam("@GMShipID", SqlDbType.NVarChar, log.GMShipID));
         return cmd;
