@@ -9,6 +9,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using Newtonsoft.Json.Linq;
+using System.Configuration;
 
 namespace goodmaji
 {
@@ -23,6 +24,7 @@ namespace goodmaji
         //public string _url = "https://cbec.sp88.tw";
 
         public string _url = System.Configuration.ConfigurationManager.AppSettings["prescourl"];
+        public PrescoEnum.AccountType TokenAccount { get; set; }
         public PRESCOAPI()
         {
 
@@ -142,16 +144,8 @@ namespace goodmaji
         {
             string msg = "";
             string url = _url + "/api/auth";
-            Account ac = new Account
-            {
-                parentId = "7M1",
-                eshopId = "000",
-                //測試
-                //password = "wJlxyJEDMWhmyAKASLcp",
-                //正式
-                //password = "2ttU8T3Ic6JLkMXxRelX",
-                password = System.Configuration.ConfigurationManager.AppSettings["prescopass"]
-            };
+            var ac = GetAccount();
+
             var accountJSON = JsonConvert.SerializeObject(ac);
             var httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
             httpWebRequest.ContentType = "application/json";
@@ -182,7 +176,24 @@ namespace goodmaji
             return msg;
         }
 
-
+        private Account GetAccount()
+        {
+            var account = new Account();
+            switch (TokenAccount)
+            {
+                case PrescoEnum.AccountType.SF:
+                    account.parentId = ConfigurationManager.AppSettings["SFParentId"].ToString();
+                    account.eshopId = ConfigurationManager.AppSettings["SFShopId"].ToString();
+                    account.password = ConfigurationManager.AppSettings["SFPassword"].ToString();
+                    break;
+                default:
+                    account.parentId = "7M1";
+                    account.eshopId = "000";
+                    account.password = "wJlxyJEDMWhmyAKASLcp";
+                    break;
+            }
+            return account;
+        }
 
         public string Get(string url, string token = "")
         {

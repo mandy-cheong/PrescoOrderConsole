@@ -52,12 +52,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enum\PrescoEnum.cs" />
     <Compile Include="Implement\APIHelper.cs" />
     <Compile Include="Implement\PRESCOAPI.cs" />
     <Compile Include="Implement\PrescoService.cs" />
     <Compile Include="Implement\ShipmentService.cs" />
     <Compile Include="Logger\Logger.cs" />
     <Compile Include="Modal\Presco\Order\FailedOrderLog.cs" />
+    <Compile Include="Modal\ShipmentStHistory.cs" />
     <Compile Include="Modal\Shipment\ShipItem.cs" />
     <Compile Include="Modal\Shipment\ShipmentData.cs" />
     <Compile Include="SQL\DapperHelper.cs" />

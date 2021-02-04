@@ -17,7 +17,7 @@ public class ShipmentData
         //
         ShipItems = new List<ShipItem>();
     }
-
+    public Guid PrescoLogID { get; set; }
     public Shipment Shipment { get; set; }
 
     public List<ShipItem> ShipItems { get; set; }

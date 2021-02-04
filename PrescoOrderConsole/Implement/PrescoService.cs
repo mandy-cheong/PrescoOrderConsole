@@ -1,6 +1,7 @@
 ﻿using goodmaji;
 using Newtonsoft.Json;
 using PrescoOrderConsole.Logger;
+using PrescoOrderConsole.Modal;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -11,6 +12,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
+using static PrescoEnum;
 
 /// <summary>
 /// Summary description for PrescoService
@@ -117,18 +119,21 @@ public class PrescoService
         var prescoAPILog = MapAPILog(aPIHelper);
         foreach (var item in request)
         {
-            var orderlog = new PrescoOrderLog();
-            orderlog.SysId = Guid.NewGuid();
-            orderlog.PrescoAPILogID = prescoAPILog.SysId;
-            orderlog.PrescoShipID = rVal.RStatus ? item.ShipNo : "";
-            orderlog.GMShipID = item.OrderNo;
-            orderlog.Msg = rVal.RMsg;
-            orderlog.Status = rVal.RStatus ? 1 : 0;
-            orderlog.HeaderMsg = rVal.DVal;
-            cmdList.Add(SqlExtension.GetInsertSqlCmd("Prescoorderlog", orderlog));
+            var orderlog = CreatePrescoLog(rVal, prescoAPILog, item);
+            cmdList.Add(CreatePrescoLogCmd(orderlog));
+
             if (rVal.RStatus)
             {
                 cmdList.Add(UpdateShipmenntCmd(orderlog));
+                var shipment = new ShipmentStHistory
+                {
+                    SSH04 = item.PageCount,
+                    SSH05 = orderlog.Status == (int)PrescoEnum.PrescoAPI.Failed ? (int)ShipmentStatus.OnHold : (int)ShipmentStatus.OrderReceived,
+                    SSH02 = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                    SSH03 = item.OrderNo,
+                    SSH27 = orderlog.Status == (int)PrescoEnum.PrescoAPI.Failed ? ShipDescription.API傳送失敗.ToString() : ""
+                };
+                cmdList.Add(SqlExtension.GetInsertSqlCmd("ShipmentStHistory", shipment));
             }
         }
         cmdList.Add(SqlExtension.GetInsertSqlCmd("PrescoAPILog", prescoAPILog));
@@ -136,12 +141,46 @@ public class PrescoService
         return rval;
     }
 
+    private SqlCommand CreatePrescoLogCmd(PrescoOrderLog orderlog)
+    {
+        var insertLogCmd = SqlExtension.GetInsertSqlCmd("Prescoorderlog", orderlog);
+        insertLogCmd.CommandText = @"IF NOT EXISTS(SELECT TOP 1 GMSHIPID FROM Prescoorderlog WHERE GMSHIPID = @GMSHIPID )
+                        BEGIN 
+                        INSERT INTO Prescoorderlog(SysId, PrescoAPILogId, PrescoShipId , GMShipId , Msg , Status , HeaderMsg)
+                        VALUES (@SysId , @PrescoAPILogId , @PrescoShipID , @GMShipId , @Msg , @Status , @HeaderMsg) 
+                        END
+                        ELSE 
+                        BEGIN
+                        UPDATE Prescoorderlog SET Status  = @Status , 
+                        PrescoAPILogId = @PrescoAPILogId,
+                        PrescoShipID = @PrescoShipID,
+                        Msg = @Msg , 
+                        HeaderMSg = @HeaderMsg 
+                        WHERE GMSHIPID = @GMSHIPID 
+                        END ";
+        return insertLogCmd;
+    }
+
+    private static PrescoOrderLog CreatePrescoLog(RVal rVal, PrescoAPILog prescoAPILog, OrderRequest item)
+    {
+        var orderlog = new PrescoOrderLog();
+        orderlog.SysId = Guid.NewGuid();
+        orderlog.PrescoAPILogID = prescoAPILog.SysId;
+        orderlog.PrescoShipID = rVal.RStatus ? item.ShipNo : "";
+        orderlog.GMShipID = item.OrderNo;
+        orderlog.Msg = rVal.RMsg;
+        orderlog.Status = rVal.RStatus ? 1 : -1;
+        orderlog.HeaderMsg = rVal.DVal == null ? "" : rVal.DVal;
+        return orderlog;
+    }
 
     private SqlCommand UpdateShipmenntCmd(PrescoOrderLog log)
     {
         var cmd = new SqlCommand();
-        cmd.CommandText = "Update Shipment set ST69 = @PrescoShipID, ST12=0 where ST02 = @GMShipID";
-        cmd.Parameters.Add( SafeSQL.CreateInputParam("@PrescoShipID", SqlDbType.NVarChar, log.PrescoShipID));
+        cmd.CommandText = "Update Shipment set ST69 = @PrescoShipID, ST12=@status where ST02 = @GMShipID";
+        var shipmentStatus = log.Status == (int)PrescoEnum.PrescoAPI.Sent ? (int)ShipmentStatus.OrderReceived : (int)ShipmentStatus.OnHold;
+        cmd.Parameters.Add(SafeSQL.CreateInputParam("@status", SqlDbType.Int, shipmentStatus));
+        cmd.Parameters.Add(SafeSQL.CreateInputParam("@PrescoShipID", SqlDbType.NVarChar, log.PrescoShipID));
         cmd.Parameters.Add(SafeSQL.CreateInputParam("@GMShipID", SqlDbType.NVarChar, log.GMShipID));
         return cmd;
     }

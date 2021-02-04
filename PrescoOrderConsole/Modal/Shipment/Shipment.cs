@@ -10,8 +10,7 @@ namespace PrescoOrderConsole.Modal
     {
         public Guid ST01 { get; set; }
         public String ST02 { get; set; }
-        public int? ST03 { get; set; } 
-        public String ST04 { get; set; } 
+     
         public int? ST05 { get; set; }
         public Decimal? ST06 { get; set; } 
         public Decimal? ST07 { get; set; } 
@@ -108,6 +107,8 @@ namespace PrescoOrderConsole.Modal
 
         public string ST94 { get; set; }
 
+        public Guid PrescoLogId { get; set; }
+
     }
 
     public enum ShipmentStatus
@@ -157,6 +158,13 @@ namespace PrescoOrderConsole.Modal
         折讓單 = 13,
         運費補款 = 14,
         店取 = 15,
+
+    }
+
+    public enum ShipDescription
+    {
+        API尚未建立 = 3,
+        API傳送失敗 = 4
 
     }
 }

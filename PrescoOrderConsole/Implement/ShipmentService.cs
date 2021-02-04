@@ -57,15 +57,20 @@ namespace PrescoOrderConsole.Implement
 
         public List<Shipment> GetOnHoldShipment()
         {
-            var sql = "SELECT * FROM Shipment WHERE ST12=@OnHoldStatus AND ST28=@COUNTRY AND (ST84!='' OR ST84 IS NOT NULL) ";
-            return _dapperHelper.Query<Shipment>(sql, new { @OnHoldStatus = (int)ShipmentStatus.OnHold, @Country = "HK" }).ToList();
+            var sql = "SELECT Shipment.*, Plog.SysId AS PrescoLogId FROM Shipment INNER JOIN PrescoOrderLog PLog on Shipment.ST02=PLog.GMSHIPID " +
+                " WHERE ST12=@OnHoldStatus AND ST28=@COUNTRY " +
+                " AND PLog.Status IN (@pending,@failed) ";
+            return _dapperHelper.Query<Shipment>(sql, new { @OnHoldStatus = (int)ShipmentStatus.OnHold, @Country = "HK",@pending=0, @failed=-1 }).ToList();
 
         }
         public List<ShipItem> GetOnHoldShipItem()
         {
-            var sql = "SELECT ShipItem.* FROM ShipItem INNER JOIN Shipment ON Shipitem.SI16= Shipment.ST01 WHERE ST12=@OnHoldStatus AND ST28=@COUNTRY AND (ST84!='' OR ST84 IS NOT NULL) ";
-            return _dapperHelper.Query<ShipItem>(sql, new { @OnHoldStatus = (int)ShipmentStatus.OnHold, @Country = "HK" }).ToList();
-
+            var sql = "SELECT ShipItem.* FROM ShipItem" +
+                " INNER JOIN Shipment ON Shipitem.SI16= Shipment.ST01" +
+                " INNER JOIN PrescoOrderLog PLog on Shipment.ST02=PLog.GMSHIPID" +
+                " WHERE ST12=@OnHoldStatus AND ST28=@COUNTRY AND (ST84!='' OR ST84 IS NOT NULL) "+
+                " AND PLog.Status IN (@pending,@failed) ";
+            return _dapperHelper.Query<ShipItem>(sql, new { @OnHoldStatus = (int)ShipmentStatus.OnHold, @Country = "HK", @pending = 0, @failed = -1 }).ToList();
         }
 
         public void UpdatePrescoOrder()
@@ -109,7 +114,7 @@ namespace PrescoOrderConsole.Implement
                 order.Note = data.Shipment.ST33;
                 order.CodCurrency = data.Shipment.ST46.ToString();
                 order.Currency = data.Shipment.ST43;
-                order.DeliveryType = "店取";
+                order.DeliveryType = string.IsNullOrEmpty(data.Shipment.ST84)?"宅配":"店取";
                 order.RecipentDate = "";
                 order.ParentId = "";
                 order.EshopId = "";

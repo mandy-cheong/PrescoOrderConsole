@@ -21,10 +21,11 @@ public class APIHelper
     public string RequestData { get; set; }
     public string ResponseData { get; set; }
 
+    public PrescoEnum.AccountType TokenAccount { get; set; }
     public APIHelper()
     {
     }
-   
+
     public RVal GETApi()
     {
         HttpWebRequest request = GenerateRequest();
@@ -33,54 +34,27 @@ public class APIHelper
         var rval = new RVal();
         try
         {
-            response = (HttpWebResponse)request.GetResponse();          
+            response = (HttpWebResponse)request.GetResponse();
         }
-       
+
         catch (WebException e)
         {
             //網站回應錯誤,
             response = (HttpWebResponse)e.Response;
         }
-       finally
+        finally
         {
             rval = GetResponseMsg(response);
         }
         return rval;
     }
 
-    public async Task<RVal> PostApiAsync()
-    {
-        var rval = new RVal();
-        HttpResponseMessage res = null;
-        try
-        {
-            var req = new HttpRequestMessage(HttpMethod.Post, Url)
-            {
-                Content = new StringContent(RequestData, Encoding.UTF8, "application/json")
-            };
-            var prescoAPI = new PRESCOAPI();
-            req.Headers.Add("Authorization", prescoAPI.PostToken());
-            var client = new HttpClient();
-            res = await client.SendAsync(req);
-            rval = await GetResponseMsg(res);
-
-        }
-        catch (Exception ex)
-        {
-         
-        }
-        finally
-        {
-        }
-        return rval;
-
-    }
 
     public RVal PostApi()
     {
         HttpWebRequest request = GenerateRequest();
         request.Method = "POST";
-        HttpWebResponse response=null;
+        HttpWebResponse response = null;
         var rval = new RVal();
         try
         {
@@ -109,7 +83,7 @@ public class APIHelper
     public HttpWebRequest GenerateRequest()
     {
         var httpWebRequest = (HttpWebRequest)WebRequest.Create(Url);
-        var prescoAPI = new PRESCOAPI();
+        var prescoAPI = new PRESCOAPI { TokenAccount = TokenAccount };
         if (!string.IsNullOrEmpty(ContentType))
             httpWebRequest.ContentType = ContentType;
         httpWebRequest.Headers.Add("Authorization", prescoAPI.PostToken());
@@ -117,26 +91,26 @@ public class APIHelper
         return httpWebRequest;
     }
 
-   
+
 
     public RVal GetResponseMsg(HttpWebResponse response)
     {
         using (var streamReader = new StreamReader(response.GetResponseStream()))
         {
             ResponseData = streamReader.ReadToEnd();
-            
+
             switch (response.StatusCode)
             {
                 case HttpStatusCode.OK:
                     return new RVal { RStatus = true, RMsg = ResponseData };
                 case HttpStatusCode.BadRequest:
-                    return new RVal { RStatus = false, RMsg = ResponseData, DVal= response.Headers["ReturnMsg"] };
+                    return new RVal { RStatus = false, RMsg = ResponseData, DVal = response.Headers["ReturnMsg"] };
                 default:
                     return new RVal { RStatus = false, RMsg = ResponseData };
             }
         }
 
-        
+
     }
     public async Task<RVal> GetResponseMsg(HttpResponseMessage response)
     {
@@ -152,6 +126,5 @@ public class APIHelper
         }
     }
 
-  
 
 }
