@@ -68,7 +68,7 @@ namespace PrescoOrderConsole.Implement
             var sql = "SELECT ShipItem.* FROM ShipItem" +
                 " INNER JOIN Shipment ON Shipitem.SI16= Shipment.ST01" +
                 " INNER JOIN PrescoOrderLog PLog on Shipment.ST02=PLog.GMSHIPID" +
-                " WHERE ST12=@OnHoldStatus AND ST28=@COUNTRY AND (ST84!='' OR ST84 IS NOT NULL) "+
+                " WHERE ST12=@OnHoldStatus AND ST28=@COUNTRY  "+
                 " AND PLog.Status IN (@pending,@failed) ";
             return _dapperHelper.Query<ShipItem>(sql, new { @OnHoldStatus = (int)ShipmentStatus.OnHold, @Country = "HK", @pending = 0, @failed = -1 }).ToList();
         }

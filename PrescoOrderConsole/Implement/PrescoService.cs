@@ -94,7 +94,10 @@ public class PrescoService
         var url = _url + "/api/shipment/new";
 
         var data = JsonConvert.SerializeObject(request);
-        var helper = new APIHelper { Url = url, RequestData = data, ContentType = "application/json" };
+        var isDelivery = string.IsNullOrEmpty(request.FirstOrDefault().Collection);
+        var tokenaccount = isDelivery ? PrescoEnum.AccountType.SF : PrescoEnum.AccountType.GM;
+        var helper = new APIHelper { Url = url, RequestData = data, ContentType = "application/json", TokenAccount = tokenaccount };
+
 
         var rval = new RVal();
         try

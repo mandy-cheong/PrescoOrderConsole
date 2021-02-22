@@ -187,9 +187,9 @@ namespace goodmaji
                     account.password = ConfigurationManager.AppSettings["SFPassword"].ToString();
                     break;
                 default:
-                    account.parentId = "7M1";
-                    account.eshopId = "000";
-                    account.password = "wJlxyJEDMWhmyAKASLcp";
+                    account.parentId = ConfigurationManager.AppSettings["GMParentId"].ToString();
+                    account.eshopId = ConfigurationManager.AppSettings["GMShopId"].ToString();
+                    account.password = ConfigurationManager.AppSettings["GMPassword"].ToString();
                     break;
             }
             return account;
